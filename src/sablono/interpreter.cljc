@@ -95,23 +95,37 @@
                   (exists? (.-value props))
                   false))))
 
+(def alternative-element-class 
+  "An atom of {:namespaced/keyword (fn [type props] react-class)} for adding new types of elements to sablono. "
+  (atom {}))
+
+(defn fallback-element-class
+  [type props]
+  (if-let [f (get @alternative-element-class type)]
+    (f type props)
+    (throw (ex-info "Cannot identify a react class. Maybe you've not registered a component?"
+                    {:type type :props props}))))
+
 #?(:cljs
    (defn element-class
      "Returns either `type` or a wrapped element for controlled
      inputs."
      [type props]
-     (if (controlled-input? type props)
-       (do (lazy-load-wrappers)
-           (case type
-             "input"
-             (case (and (object? props) (.-type props))
-               "radio" wrapped-checked
-               "checkbox" wrapped-checked
-               wrapped-input)
-             "select" wrapped-select
-             "textarea" wrapped-textarea
-             type))
-       type)))
+     (if (namespace type)
+       (fallback-element-class type props)
+       (let [type (name type)]
+         (if (controlled-input? type props)
+           (do (lazy-load-wrappers)
+               (case type
+                 "input"
+                 (case (and (object? props) (.-type props))
+                   "radio" wrapped-checked
+                   "checkbox" wrapped-checked
+                   wrapped-input)
+                 "select" wrapped-select
+                 "textarea" wrapped-textarea
+                 type))
+           type)))))
 
 (defn create-element
   "Create a React element. Returns a JavaScript object when running

@@ -1,0 +1,6 @@
+{:paths ["src"]
+ :deps
+ {criterium/criterium {:mvn/version "0.4.5"}
+  funcool/tubax {:mvn/version "0.2.0"}
+  org.clojure/core.rrb-vector {:mvn/version "0.1.1"}
+  perforate-x/perforate-x {:mvn/version "0.1.0"}}}

@@ -148,19 +148,22 @@
             (not (satisfies? p/IReactComponent x)))))
 
 (defn element
-  "Ensure an element vector is of the form [tag-name attrs content]."
+  "Ensure an element vector is of the form [normalized-tag attrs content].
+   Normalized tag is keyword form, without classes."
   [[tag & content]]
   (when-not (or (keyword? tag)
                 (symbol? tag)
                 (string? tag))
     (throw (ex-info (str tag " is not a valid element name.") {:tag tag :content content})))
-  (let [[tag id class] (match-tag tag)
+  (let [namespace (when (or (keyword? tag) (symbol? tag)) (namespace tag))
+        [tag id class] (match-tag tag)
+        normalized-tag (keyword namespace tag)
         tag-attrs (compact-map {:id id :class class})
         map-attrs (first content)]
     (if (attrs? map-attrs)
-      [tag
+      [normalized-tag
        (merge-with-class tag-attrs map-attrs)
        (children (next content))]
-      [tag
+      [normalized-tag
        (attributes tag-attrs)
        (children content)])))
