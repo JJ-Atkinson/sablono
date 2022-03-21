@@ -95,12 +95,14 @@
                   (exists? (.-value props))
                   false))))
 
-(defmulti lookup-dynamic-element (fn [type & _] type))
+(def dynamic-elements
+  (atom {#_:namespaced/keyword
+         #_(fn [type props children] react-element)}))
 
-(defn dynamic-element [type props children]
-  (if-let [f (lookup-dynamic-element type props children)]
+(defn get-dynamic-element [type props children]
+  (if-let [f (get @dynamic-elements type)]
     (f type props children)
-    (throw (ex-info (str "Cannot find a react element with type <" type ">. Maybe you've not registered a component?")
+    (throw (ex-info (str "Cannot find a react element for type <" type ">. Maybe you've not dynamically registered a component?")
                     {:type type :props props}))))
 
 #?(:cljs
@@ -132,7 +134,7 @@
             :react-key nil
             :tag type})
      :cljs (if (namespace type)
-             (dynamic-element type props children)
+             (get-dynamic-element type props children)
              (apply React/createElement (element-class type props) props children))))
 
 (defn attributes [attrs]
