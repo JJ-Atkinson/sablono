@@ -124,19 +124,6 @@
              type))
          type))))
 
-(defn create-element
-  "Create a React element. Returns a JavaScript object when running
-  under ClojureScript, and a om.dom.Element record in Clojure."
-  [type props & children]
-  #?(:clj (html/element
-           {:attrs props
-            :children children
-            :react-key nil
-            :tag type})
-     :cljs (if (namespace type)
-             (get-dynamic-element type props children)
-             (apply React/createElement (element-class type props) props children))))
-
 (defn attributes [attrs]
   #?(:clj (-> (util/html-to-dom-attrs attrs)
               (update :className #(some->> % (str/join " "))))
@@ -148,6 +135,20 @@
                  (set! (.-className js-attrs) class))
                js-attrs))))
 
+(defn create-element
+  "Create a React element. Returns a JavaScript object when running
+  under ClojureScript, and a om.dom.Element record in Clojure."
+  [type clj-props & children]
+  #?(:clj (html/element
+           {:attrs clj-props
+            :children children
+            :react-key nil
+            :tag type})
+     :cljs (if (namespace type)
+             (get-dynamic-element type clj-props children)
+             (let [js-props (attributes clj-props)]
+               (apply React/createElement (element-class type js-props) js-props children)))))
+
 (defn- interpret-seq
   "Eagerly interpret the seq `x` as HTML elements."
   [x]
@@ -158,7 +159,7 @@
   [element]
   (let [[type attrs content] (normalize/element element)]
     (apply create-element type
-           (attributes attrs)
+           attrs
            (interpret-seq content))))
 
 (defn- interpret-vec
